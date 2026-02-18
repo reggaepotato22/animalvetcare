@@ -290,7 +290,7 @@ export function AdmissionDetails({ record }: AdmissionDetailsProps) {
               <div className="flex items-center gap-4">
                 <Badge className={
                   editedStatus === "critical" ? "bg-destructive/10 text-destructive border-destructive/20" :
-                  editedStatus === "admitted" ? "bg-info/10 text-info border-info/20" :
+                  editedStatus === "admitted" ? "bg-primary/10 text-primary border-primary/20" :
                   "bg-success/10 text-success border-success/20"
                 }>
                   {editedStatus.toUpperCase()}

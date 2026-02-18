@@ -114,7 +114,7 @@ export function ProgressNotes({ record }: ProgressNotesProps) {
   const getConditionColor = (condition: string) => {
     switch (condition) {
       case "improving": return "bg-success/10 text-success border-success/20";
-      case "stable": return "bg-info/10 text-info border-info/20";
+      case "stable": return "bg-primary/10 text-primary border-primary/20";
       case "declining": return "bg-destructive/10 text-destructive border-destructive/20";
       default: return "bg-muted/10 text-muted-foreground border-muted/20";
     }

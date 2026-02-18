@@ -86,7 +86,7 @@ export default function Records() {
       case "completed":
         return "bg-success/10 text-success border-success/20";
       case "follow-up":
-        return "bg-info/10 text-info border-info/20";
+        return "bg-primary/10 text-primary border-primary/20";
       default:
         return "bg-muted/10 text-muted-foreground border-muted/20";
     }

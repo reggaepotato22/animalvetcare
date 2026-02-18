@@ -6,8 +6,38 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 
+type AppointmentStatus = "confirmed" | "pending" | "cancelled" | "completed";
+
+type AppointmentType =
+  | "Checkup"
+  | "Vaccination"
+  | "Surgery"
+  | "Emergency"
+  | "Followup";
+
+interface Appointment {
+  id: string;
+  petName: string;
+  ownerName: string;
+  ownerId: string;
+  ownerPhone: string;
+  ownerEmail: string;
+  date: Date;
+  time: string;
+  duration: number;
+  type: AppointmentType;
+  vet: string;
+  vetId: string;
+  status: AppointmentStatus;
+  examRoom: string;
+  location: string;
+  notes: string;
+  reason: string;
+  patientId: string;
+}
+
 // Mock appointment data - in a real app this would come from an API
-const mockAppointments: Record<string, any> = {
+const mockAppointments: Record<string, Appointment> = {
   "1": {
     id: "1",
     petName: "Max",
@@ -93,32 +123,32 @@ export default function AppointmentDetails() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "confirmed":
-        return "bg-green-100 text-green-800 border-green-200";
+        return "bg-success/10 text-success border-success/20";
       case "pending":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+        return "bg-warning/10 text-warning border-warning/20";
       case "cancelled":
-        return "bg-red-100 text-red-800 border-red-200";
+        return "bg-destructive/10 text-destructive border-destructive/20";
       case "completed":
-        return "bg-blue-100 text-blue-800 border-blue-200";
+        return "bg-primary/10 text-primary border-primary/20";
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
+        return "bg-muted/10 text-muted-foreground border-muted/20";
     }
   };
 
   const getTypeColor = (type: string) => {
     switch (type) {
       case "Checkup":
-        return "bg-blue-100 text-blue-800 border-blue-200";
+        return "bg-primary/10 text-primary border-primary/20";
       case "Vaccination":
-        return "bg-green-100 text-green-800 border-green-200";
+        return "bg-success/10 text-success border-success/20";
       case "Surgery":
-        return "bg-red-100 text-red-800 border-red-200";
+        return "bg-destructive/10 text-destructive border-destructive/20";
       case "Emergency":
-        return "bg-orange-100 text-orange-800 border-orange-200";
+        return "bg-destructive/10 text-destructive border-destructive/20";
       case "Followup":
-        return "bg-purple-100 text-purple-800 border-purple-200";
+        return "bg-warning/10 text-warning border-warning/20";
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
+        return "bg-muted/10 text-muted-foreground border-muted/20";
     }
   };
 

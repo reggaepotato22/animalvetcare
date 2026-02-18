@@ -150,7 +150,7 @@ export default function Hospitalization() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case "routine": return "bg-info/10 text-info border-info/20";
+      case "routine": return "bg-primary/10 text-primary border-primary/20";
       case "urgent": return "bg-warning/10 text-warning border-warning/20";
       case "emergency": return "bg-destructive/10 text-destructive border-destructive/20";
       default: return "bg-muted/10 text-muted-foreground border-muted/20";
@@ -178,7 +178,7 @@ export default function Hospitalization() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "admitted": return "bg-info/10 text-info border-info/20";
+      case "admitted": return "bg-primary/10 text-primary border-primary/20";
       case "critical": return "bg-destructive/10 text-destructive border-destructive/20";
       case "discharged": return "bg-success/10 text-success border-success/20";
       default: return "bg-muted/10 text-muted-foreground border-muted/20";

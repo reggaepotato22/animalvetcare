@@ -308,7 +308,7 @@ export function ClinicalOrders({ record }: ClinicalOrdersProps) {
       case "running":
       case "pending":
       case "ordered":
-        return "bg-info/10 text-info border-info/20";
+        return "bg-primary/10 text-primary border-primary/20";
       case "completed":
         return "bg-success/10 text-success border-success/20";
       case "discontinued":

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,6 +22,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { SteppedProgress } from "@/components/SteppedProgress";
 
 const patientSchema = z.object({
   name: z.string().min(1, "Pet name is required"),
@@ -52,9 +53,19 @@ export default function AddPatient() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [patientId] = useState(() => generatePatientId());
+  const [currentStep, setCurrentStep] = useState(0);
+  const contentTopRef = useRef<HTMLDivElement | null>(null);
+
+  const steps = [
+    "Owner Information",
+    "Pet Details",
+    "Medical History",
+    "Confirmation",
+  ] as const;
 
   const form = useForm<PatientFormData>({
     resolver: zodResolver(patientSchema),
+    mode: "onChange",
     defaultValues: {
       name: "",
       species: "",
@@ -77,6 +88,71 @@ export default function AddPatient() {
       vaccinations: [],
     },
   });
+
+  const watched = form.watch();
+
+  const isOwnerStepComplete =
+    !!watched.ownerName &&
+    !!watched.ownerPhone &&
+    !!watched.ownerEmail &&
+    !!watched.ownerAddress &&
+    !!watched.emergencyContact &&
+    !!watched.emergencyPhone;
+
+  const isPetStepComplete =
+    !!watched.name &&
+    !!watched.species &&
+    !!watched.breed &&
+    !!watched.age &&
+    !!watched.weight &&
+    !!watched.gender &&
+    !!watched.color;
+
+  const isMedicalStepComplete = true;
+
+  const isCurrentStepComplete =
+    currentStep === 0
+      ? isOwnerStepComplete
+      : currentStep === 1
+      ? isPetStepComplete
+      : currentStep === 2
+      ? isMedicalStepComplete
+      : true;
+
+  const handleNext = async () => {
+    const fieldsToValidate =
+      currentStep === 0
+        ? [
+            "ownerName",
+            "ownerPhone",
+            "ownerEmail",
+            "ownerAddress",
+            "emergencyContact",
+            "emergencyPhone",
+          ]
+        : currentStep === 1
+        ? ["name", "species", "breed", "age", "weight", "gender", "color"]
+        : currentStep === 2
+        ? []
+        : [];
+
+    if (fieldsToValidate.length > 0) {
+      const valid = await form.trigger(fieldsToValidate as (keyof PatientFormData)[], {
+        shouldFocus: true,
+      });
+      if (!valid) return;
+    }
+
+    setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
+
+    if (contentTopRef.current) {
+      contentTopRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  const handleBack = () => {
+    setCurrentStep((prev) => Math.max(prev - 1, 0));
+  };
 
   const onSubmit = async (data: PatientFormData) => {
     setIsSubmitting(true);
@@ -117,6 +193,9 @@ export default function AddPatient() {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <SteppedProgress steps={steps as unknown as string[]} currentStep={currentStep} />
+
+          <div ref={contentTopRef} className="space-y-6 scroll-mt-20">
           {/* Patient ID Display */}
           <Card className="bg-muted/50 border-2">
             <CardContent className="pt-6">
@@ -130,141 +209,9 @@ export default function AddPatient() {
             </CardContent>
           </Card>
 
-          <div className="grid gap-6 lg:grid-cols-2">
-            {/* Pet Information */}
+          {currentStep === 0 && (
             <Card>
-              <CardHeader>
-                <CardTitle>Pet Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Pet Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter pet name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="species"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Species</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select species" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="dog">Dog</SelectItem>
-                          <SelectItem value="cat">Cat</SelectItem>
-                          <SelectItem value="bird">Bird</SelectItem>
-                          <SelectItem value="rabbit">Rabbit</SelectItem>
-                          <SelectItem value="hamster">Hamster</SelectItem>
-                          <SelectItem value="reptile">Reptile</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="breed"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Breed</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter breed" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="age"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Age</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., 3 years" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="weight"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Weight</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., 28kg" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="gender"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Gender</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select gender" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="male">Male</SelectItem>
-                            <SelectItem value="female">Female</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="color"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Color</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter color" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Owner Information */}
-            <Card>
-              <CardHeader>
+              <CardHeader className="scroll-mt-20">
                 <CardTitle>Owner Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -324,7 +271,7 @@ export default function AddPatient() {
                   )}
                 />
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <FormField
                     control={form.control}
                     name="emergencyContact"
@@ -355,41 +302,22 @@ export default function AddPatient() {
                 </div>
               </CardContent>
             </Card>
-          </div>
+          )}
 
-          {/* Medical Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Medical Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <FormField
-                control={form.control}
-                name="medicalHistory"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Medical History</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Enter any relevant medical history..." 
-                        className="min-h-[100px]"
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-2 gap-4">
+          {currentStep === 1 && (
+            <Card>
+              <CardHeader className="scroll-mt-20">
+                <CardTitle>Pet Details</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="surgeries"
+                  name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Surgeries</FormLabel>
+                      <FormLabel>Pet Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter previous surgeries" {...field} />
+                        <Input placeholder="Enter pet name" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -398,31 +326,133 @@ export default function AddPatient() {
 
                 <FormField
                   control={form.control}
-                  name="chronicConditions"
+                  name="species"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Chronic Conditions</FormLabel>
+                      <FormLabel>Species</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select species" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="dog">Dog</SelectItem>
+                          <SelectItem value="cat">Cat</SelectItem>
+                          <SelectItem value="bird">Bird</SelectItem>
+                          <SelectItem value="rabbit">Rabbit</SelectItem>
+                          <SelectItem value="hamster">Hamster</SelectItem>
+                          <SelectItem value="reptile">Reptile</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="breed"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Breed</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter chronic conditions" {...field} />
+                        <Input placeholder="Enter breed" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              </div>
 
-              <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="age"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Age</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., 3 years" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="weight"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Weight</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., 28kg" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="gender"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Gender</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select gender" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="male">Male</SelectItem>
+                            <SelectItem value="female">Female</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="color"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Color</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter color" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {currentStep === 2 && (
+            <Card>
+              <CardHeader className="scroll-mt-20">
+                <CardTitle>Medical History</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="allergies"
+                  name="medicalHistory"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Allergies</FormLabel>
+                      <FormLabel>Medical History</FormLabel>
                       <FormControl>
-                        <TagInput
-                          value={field.value}
-                          onChange={field.onChange}
-                          placeholder="Add allergies (e.g., peanuts, dust)"
+                        <Textarea
+                          placeholder="Enter any relevant medical history..."
+                          className="min-h-[100px]"
+                          {...field}
                         />
                       </FormControl>
                       <FormMessage />
@@ -430,46 +460,145 @@ export default function AddPatient() {
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="medications"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Current Medications</FormLabel>
-                      <FormControl>
-                        <TagInput
-                          value={field.value}
-                          onChange={field.onChange}
-                          placeholder="Add medications (e.g., aspirin, insulin)"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="surgeries"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Surgeries</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter previous surgeries" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="vaccinations"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Vaccinations</FormLabel>
-                      <FormControl>
-                        <TagInput
-                          value={field.value}
-                          onChange={field.onChange}
-                          placeholder="Add vaccinations (e.g., rabies, DHPP)"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </CardContent>
-          </Card>
+                  <FormField
+                    control={form.control}
+                    name="chronicConditions"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Chronic Conditions</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter chronic conditions" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-          <div className="flex justify-end gap-4">
+                <div className="grid gap-4 md:grid-cols-3">
+                  <FormField
+                    control={form.control}
+                    name="allergies"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Allergies</FormLabel>
+                        <FormControl>
+                          <TagInput
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="Add allergies (e.g., peanuts, dust)"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="medications"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Current Medications</FormLabel>
+                        <FormControl>
+                          <TagInput
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="Add medications (e.g., aspirin, insulin)"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="vaccinations"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Vaccinations</FormLabel>
+                        <FormControl>
+                          <TagInput
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="Add vaccinations (e.g., rabies, DHPP)"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {currentStep === 3 && (
+            <Card>
+              <CardHeader className="scroll-mt-20">
+                <CardTitle>Review & Confirm</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4 text-sm">
+                <p className="text-muted-foreground">
+                  Review the owner, pet, and medical details before creating this patient record.
+                </p>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2 rounded-2xl border border-slate-100 bg-white p-4">
+                    <h3 className="text-xs font-semibold uppercase text-muted-foreground">
+                      Owner
+                    </h3>
+                    <p className="font-medium">{watched.ownerName || "—"}</p>
+                    <p className="text-muted-foreground">
+                      {watched.ownerPhone || "No phone provided"}
+                    </p>
+                    <p className="text-muted-foreground">
+                      {watched.ownerEmail || "No email provided"}
+                    </p>
+                    <p className="text-muted-foreground">
+                      {watched.ownerAddress || "No address provided"}
+                    </p>
+                  </div>
+                  <div className="space-y-2 rounded-2xl border border-slate-100 bg-white p-4">
+                    <h3 className="text-xs font-semibold uppercase text-muted-foreground">
+                      Pet
+                    </h3>
+                    <p className="font-medium">
+                      {watched.name || "Unnamed pet"}
+                    </p>
+                    <p className="text-muted-foreground">
+                      {watched.species || "Species not set"} ·{" "}
+                      {watched.breed || "Breed not set"}
+                    </p>
+                    <p className="text-muted-foreground">
+                      {watched.age || "Age not set"} ·{" "}
+                      {watched.weight || "Weight not set"}
+                    </p>
+                    <p className="text-muted-foreground">
+                      {watched.color || "Color not set"}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <div className="flex items-center justify-between gap-4">
             <Button 
               type="button" 
               variant="outline" 
@@ -477,16 +606,39 @@ export default function AddPatient() {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (
-                "Adding Patient..."
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Add Patient
-                </>
+            <div className="flex items-center gap-3">
+              {currentStep > 0 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={handleBack}
+                >
+                  Back
+                </Button>
               )}
-            </Button>
+              {currentStep < steps.length - 1 && (
+                <Button
+                  type="button"
+                  onClick={handleNext}
+                  disabled={!isCurrentStepComplete}
+                >
+                  Next
+                </Button>
+              )}
+              {currentStep === steps.length - 1 && (
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    "Adding Patient..."
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-4 w-4" />
+                      Add Patient
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+          </div>
           </div>
         </form>
       </Form>

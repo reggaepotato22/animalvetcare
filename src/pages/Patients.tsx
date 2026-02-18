@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Plus, Filter, Search, Grid3X3, List } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PatientCard } from "@/components/PatientCard";
@@ -20,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Mock data
 const mockPatients = [
@@ -81,14 +83,38 @@ const mockPatients = [
   },
 ];
 
+type PatientListItem = (typeof mockPatients)[number];
+
+const fetchPatients = async (): Promise<PatientListItem[]> => {
+  await new Promise((resolve) => setTimeout(resolve, 400));
+  return mockPatients;
+};
+
 export default function Patients() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [speciesFilter, setSpeciesFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
-  const filteredPatients = mockPatients.filter((patient) => {
+  const {
+    data: patients,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: ["patients"],
+    queryFn: fetchPatients,
+  });
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const q = params.get("q") ?? "";
+    setSearchTerm(q);
+  }, [location.search]);
+
+  const filteredPatients = (patients ?? []).filter((patient) => {
     const matchesSearch = patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          patient.owner.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          patient.breed.toLowerCase().includes(searchTerm.toLowerCase());
@@ -99,29 +125,30 @@ export default function Patients() {
     return matchesSearch && matchesStatus && matchesSpecies;
   });
 
-  const handleViewDetails = (patient: any) => {
+  const handleViewDetails = (patient: PatientListItem) => {
     navigate(`/patients/${patient.id}`);
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Patient Management</h1>
-          <p className="text-muted-foreground">
-            Manage your animal patients and their records
+    <div className="space-y-6 animate-in fade-in-0">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Patient Management</h1>
+          <p className="max-w-xl text-sm text-muted-foreground sm:text-base">
+            Manage your animal patients and their records.
           </p>
         </div>
         <Button 
-          className="bg-primary hover:bg-primary/90"
+          className="inline-flex items-center justify-center bg-primary hover:bg-primary/90"
           onClick={() => navigate("/patients/add")}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add Patient
+          Add patient
         </Button>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col sm:flex-row gap-4 flex-1">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
@@ -131,37 +158,38 @@ export default function Patients() {
             className="pl-10"
           />
         </div>
-        
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px]">
-            <Filter className="mr-2 h-4 w-4" />
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="healthy">Healthy</SelectItem>
-            <SelectItem value="treatment">Treatment</SelectItem>
-            <SelectItem value="critical">Critical</SelectItem>
-          </SelectContent>
-        </Select>
+          
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <Filter className="mr-2 h-4 w-4" />
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All status</SelectItem>
+              <SelectItem value="healthy">Healthy</SelectItem>
+              <SelectItem value="treatment">Treatment</SelectItem>
+              <SelectItem value="critical">Critical</SelectItem>
+            </SelectContent>
+          </Select>
 
-        <Select value={speciesFilter} onValueChange={setSpeciesFilter}>
-          <SelectTrigger className="w-[150px]">
-            <SelectValue placeholder="Species" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Species</SelectItem>
-            <SelectItem value="dog">Dogs</SelectItem>
-            <SelectItem value="cat">Cats</SelectItem>
-          </SelectContent>
-        </Select>
+          <Select value={speciesFilter} onValueChange={setSpeciesFilter}>
+            <SelectTrigger className="w-full sm:w-[150px]">
+              <SelectValue placeholder="Species" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All species</SelectItem>
+              <SelectItem value="dog">Dogs</SelectItem>
+              <SelectItem value="cat">Cats</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-        <div className="flex border rounded-md">
+        <div className="inline-flex items-center justify-end gap-1 rounded-md border bg-card p-1">
           <Button
             variant={viewMode === "grid" ? "default" : "ghost"}
             size="sm"
             onClick={() => setViewMode("grid")}
-            className="rounded-r-none"
+            className="h-8 w-9 rounded-md data-[state=on]:shadow-sm"
           >
             <Grid3X3 className="h-4 w-4" />
           </Button>
@@ -169,25 +197,77 @@ export default function Patients() {
             variant={viewMode === "list" ? "default" : "ghost"}
             size="sm"
             onClick={() => setViewMode("list")}
-            className="rounded-l-none"
+            className="h-8 w-9 rounded-md data-[state=on]:shadow-sm"
           >
             <List className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
-      {viewMode === "grid" ? (
+      {isError && (
+        <div className="rounded-md border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive flex items-center justify-between">
+          <span>Unable to load patients. Please try again.</span>
+          <Button variant="outline" size="sm" onClick={() => refetch()}>
+            Retry
+          </Button>
+        </div>
+      )}
+
+      {isLoading ? (
+        viewMode === "grid" ? (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div key={index} className="space-y-3">
+                <Skeleton className="h-40 w-full rounded-lg" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-md border bg-card">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Patient ID</TableHead>
+                  <TableHead>Patient</TableHead>
+                  <TableHead>Species & Breed</TableHead>
+                  <TableHead>Age & Weight</TableHead>
+                  <TableHead>Owner</TableHead>
+                  <TableHead>Location</TableHead>
+                  <TableHead>Last Visit</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <TableRow key={index}>
+                    {Array.from({ length: 9 }).map((__, cellIndex) => (
+                      <TableCell key={cellIndex}>
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )
+      ) : viewMode === "grid" ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredPatients.map((patient) => (
-            <PatientCard
+            <div
               key={patient.id}
-              patient={patient}
-              onViewDetails={handleViewDetails}
-            />
+              className="transition-transform transition-shadow duration-200 hover:-translate-y-0.5 hover:shadow-md"
+            >
+              <PatientCard
+                patient={patient}
+                onViewDetails={handleViewDetails}
+              />
+            </div>
           ))}
         </div>
       ) : (
-        <div className="rounded-md border">
+        <div className="overflow-hidden rounded-md border bg-card">
           <Table>
             <TableHeader>
               <TableRow>
@@ -207,11 +287,11 @@ export default function Patients() {
                 const getStatusColor = (status: string) => {
                   switch (status) {
                     case "healthy":
-                      return "bg-success text-success-foreground";
+                      return "bg-emerald-50 text-emerald-700";
                     case "treatment":
-                      return "bg-warning text-warning-foreground";
+                      return "bg-amber-50 text-amber-700";
                     case "critical":
-                      return "bg-destructive text-destructive-foreground";
+                      return "bg-rose-50 text-rose-700";
                     default:
                       return "bg-muted text-muted-foreground";
                   }
@@ -263,7 +343,7 @@ export default function Patients() {
         </div>
       )}
 
-      {filteredPatients.length === 0 && (
+      {!isLoading && filteredPatients.length === 0 && (
         <div className="text-center py-12">
           <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
             <Search className="h-10 w-10 text-muted-foreground" />

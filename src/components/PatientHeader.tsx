@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Phone, Mail, MapPin, Heart, ArrowLeft, Edit } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { EditPatientDialog } from "@/components/EditPatientDialog";
+import { EditPatientDialog, type Patient } from "@/components/EditPatientDialog";
 
 interface PatientHeaderProps {
   name: string;
@@ -17,7 +17,7 @@ interface PatientHeaderProps {
   color: string;
   microchip: string;
   owner: { name: string; phone: string; email: string; address: string };
-  patient: any; // Full patient object for EditPatientDialog
+  patient: Patient;
   onStatusChipClass: (status: string) => string;
 }
 

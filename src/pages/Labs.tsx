@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Plus, Search, Filter, Download, TestTube, Calendar, Clock, AlertCircle, CheckCircle } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { LabOrderDialog } from "@/components/LabOrderDialog";
 import { LabResultsDialog } from "@/components/LabResultsDialog";
 import { LabOrdersTable } from "@/components/LabOrdersTable";
+import { Skeleton } from "@/components/ui/skeleton";
 
 
 interface LabOrder {
@@ -98,6 +100,11 @@ const getStatusColor = (status: string) => {
   }
 };
 
+const fetchLabOrders = async (): Promise<LabOrder[]> => {
+  await new Promise((resolve) => setTimeout(resolve, 400));
+  return mockLabOrders;
+};
+
 const getPriorityColor = (priority: string) => {
   switch (priority) {
     case "stat": return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
@@ -111,6 +118,17 @@ export default function Labs() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
+
+  const {
+    data: labOrdersData,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: ["lab-orders"],
+    queryFn: fetchLabOrders,
+  });
+
   const [labOrders, setLabOrders] = useState<LabOrder[]>(mockLabOrders);
 
   const handleResultsAdded = (orderId: string, results: any) => {
@@ -126,7 +144,9 @@ export default function Labs() {
     ));
   };
 
-  const filteredOrders = labOrders.filter(order => {
+  const sourceOrders = labOrdersData ?? labOrders;
+
+  const filteredOrders = sourceOrders.filter(order => {
     const matchesSearch = order.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          order.tests.some(test => test.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -137,10 +157,10 @@ export default function Labs() {
   });
 
   const stats = {
-    pending: labOrders.filter(o => o.status === "pending").length,
-    inProgress: labOrders.filter(o => o.status === "in-progress").length,
-    completed: labOrders.filter(o => o.status === "completed").length,
-    stat: labOrders.filter(o => o.priority === "stat").length
+    pending: sourceOrders.filter(o => o.status === "pending").length,
+    inProgress: sourceOrders.filter(o => o.status === "in-progress").length,
+    completed: sourceOrders.filter(o => o.status === "completed").length,
+    stat: sourceOrders.filter(o => o.priority === "stat").length
   };
 
   return (
@@ -162,58 +182,75 @@ export default function Labs() {
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.pending}</div>
-            <p className="text-xs text-muted-foreground">
-              Awaiting sample collection
-            </p>
-          </CardContent>
-        </Card>
+        {isLoading ? (
+          Array.from({ length: 4 }).map((_, index) => (
+            <Skeleton key={index} className="h-24 w-full" />
+          ))
+        ) : (
+          <>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
+                <Clock className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.pending}</div>
+                <p className="text-xs text-muted-foreground">
+                  Awaiting sample collection
+                </p>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">In Progress</CardTitle>
-            <TestTube className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.inProgress}</div>
-            <p className="text-xs text-muted-foreground">
-              Currently being processed
-            </p>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">In Progress</CardTitle>
+                <TestTube className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.inProgress}</div>
+                <p className="text-xs text-muted-foreground">
+                  Currently being processed
+                </p>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.completed}</div>
-            <p className="text-xs text-muted-foreground">
-              Results available
-            </p>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Completed</CardTitle>
+                <CheckCircle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.completed}</div>
+                <p className="text-xs text-muted-foreground">
+                  Results available
+                </p>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">STAT Orders</CardTitle>
-            <AlertCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.stat}</div>
-            <p className="text-xs text-muted-foreground">
-              High priority orders
-            </p>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">STAT Orders</CardTitle>
+                <AlertCircle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.stat}</div>
+                <p className="text-xs text-muted-foreground">
+                  High priority orders
+                </p>
+              </CardContent>
+            </Card>
+          </>
+        )}
       </div>
+
+      {isError && (
+        <div className="rounded-md border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive flex items-center justify-between">
+          <span>Unable to load lab orders. Please try again.</span>
+          <Button variant="outline" size="sm" onClick={() => refetch()}>
+            Retry
+          </Button>
+        </div>
+      )}
 
       <Tabs defaultValue="orders" className="space-y-4">
         <TabsList>
@@ -272,7 +309,23 @@ export default function Labs() {
             </CardContent>
           </Card>
 
-          <LabOrdersTable orders={filteredOrders} onResultsAdded={handleResultsAdded} />
+          {isLoading ? (
+            <Card>
+              <CardContent className="p-0">
+                <div className="divide-y">
+                  {Array.from({ length: 4 }).map((_, index) => (
+                    <div key={index} className="p-4 grid grid-cols-4 gap-4">
+                      {Array.from({ length: 4 }).map((__, cellIndex) => (
+                        <Skeleton key={cellIndex} className="h-4 w-full" />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <LabOrdersTable orders={filteredOrders} onResultsAdded={handleResultsAdded} />
+          )}
         </TabsContent>
 
         <TabsContent value="results" className="space-y-4">
@@ -284,31 +337,42 @@ export default function Labs() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {filteredOrders
-                  .filter(order => order.status === "completed")
-                  .map((order) => (
-                    <div key={order.id} className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">{order.patientName}</span>
-                            <Badge variant="outline">{order.id}</Badge>
-                            <Badge className={getPriorityColor(order.priority)}>
-                              {order.priority.toUpperCase()}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {order.tests.join(", ")} • {order.resultDate}
-                          </p>
-                        </div>
-                        <LabResultsDialog order={order}>
-                          <Button size="sm">View Results</Button>
-                        </LabResultsDialog>
-                      </div>
+              {isLoading ? (
+                <div className="space-y-4">
+                  {Array.from({ length: 3 }).map((_, index) => (
+                    <div key={index} className="border rounded-lg p-4">
+                      <Skeleton className="h-5 w-1/3 mb-2" />
+                      <Skeleton className="h-4 w-2/3" />
                     </div>
                   ))}
-              </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {filteredOrders
+                    .filter(order => order.status === "completed")
+                    .map((order) => (
+                      <div key={order.id} className="border rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{order.patientName}</span>
+                              <Badge variant="outline">{order.id}</Badge>
+                              <Badge className={getPriorityColor(order.priority)}>
+                                {order.priority.toUpperCase()}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {order.tests.join(", ")} • {order.resultDate}
+                            </p>
+                          </div>
+                          <LabResultsDialog order={order}>
+                            <Button size="sm">View Results</Button>
+                          </LabResultsDialog>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
