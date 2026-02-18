@@ -39,6 +39,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { toast } from "@/components/ui/use-toast";
+import { SteppedProgress } from "@/components/SteppedProgress";
 
 const formSchema = z.object({
   petName: z.string().min(1, "Pet name is required"),

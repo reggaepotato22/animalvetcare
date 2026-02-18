@@ -232,7 +232,7 @@ const Index = () => {
         <CardContent>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <Button
-              className="justify-start"
+              className="justify-start transition-colors duration-150"
               onClick={() => {
                 setChecklist((prev) => ({ ...prev, patient: true }));
                 navigate("/patients/add");
@@ -242,7 +242,7 @@ const Index = () => {
             </Button>
             <Button
               variant="outline"
-              className="justify-start"
+              className="justify-start transition-colors duration-150"
               onClick={() => {
                 setChecklist((prev) => ({ ...prev, appointment: true }));
                 navigate("/appointments");
@@ -252,7 +252,7 @@ const Index = () => {
             </Button>
             <Button
               variant="outline"
-              className="justify-start"
+              className="justify-start transition-colors duration-150"
               onClick={() => {
                 setChecklist((prev) => ({ ...prev, record: true }));
                 navigate("/records/new");
@@ -262,7 +262,7 @@ const Index = () => {
             </Button>
             <Button
               variant="outline"
-              className="justify-start"
+              className="justify-start transition-colors duration-150"
               onClick={() => {
                 setChecklist((prev) => ({ ...prev, labs: true }));
                 navigate("/labs");
@@ -272,7 +272,7 @@ const Index = () => {
             </Button>
             <Button
               variant="outline"
-              className="justify-start"
+              className="justify-start transition-colors duration-150"
               onClick={() => navigate("/hospitalization")}
             >
               Admit patient

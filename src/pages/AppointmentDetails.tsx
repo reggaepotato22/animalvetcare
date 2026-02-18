@@ -36,7 +36,6 @@ interface Appointment {
   patientId: string;
 }
 
-// Mock appointment data - in a real app this would come from an API
 const mockAppointments: Record<string, Appointment> = {
   "1": {
     id: "1",
@@ -99,6 +98,83 @@ const mockAppointments: Record<string, Appointment> = {
     patientId: "P-2025-10236",
   },
 };
+
+function formatICSDate(date: Date) {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  const hours = String(date.getUTCHours()).padStart(2, "0");
+  const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+  const seconds = String(date.getUTCSeconds()).padStart(2, "0");
+
+  return `${year}${month}${day}T${hours}${minutes}${seconds}Z`;
+}
+
+function downloadAppointmentICS(appointment: Appointment) {
+  const [hours, minutes] = appointment.time.split(":").map(Number);
+  const start = new Date(appointment.date);
+  start.setHours(hours || 0, minutes || 0, 0, 0);
+
+  const end = new Date(start.getTime() + appointment.duration * 60 * 1000);
+
+  const dtStart = formatICSDate(start);
+  const dtEnd = formatICSDate(end);
+
+  const summary = `${appointment.petName} - ${appointment.type} Appointment`;
+  const description = appointment.reason || "Veterinary appointment";
+  const location = appointment.location || "Clinic";
+
+  const icsContent = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//VetCare Pro//Appointment//EN",
+    "BEGIN:VEVENT",
+    `UID:${appointment.id}@vetcarepro`,
+    `DTSTAMP:${formatICSDate(new Date())}`,
+    `DTSTART:${dtStart}`,
+    `DTEND:${dtEnd}`,
+    `SUMMARY:${summary}`,
+    `DESCRIPTION:${description}`,
+    `LOCATION:${location}`,
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].join("\r\n");
+
+  const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${appointment.petName}-appointment.ics`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+function getGoogleCalendarUrl(appointment: Appointment) {
+  const [hours, minutes] = appointment.time.split(":").map(Number);
+  const start = new Date(appointment.date);
+  start.setHours(hours || 0, minutes || 0, 0, 0);
+  const end = new Date(start.getTime() + appointment.duration * 60 * 1000);
+
+  const dtStart = formatICSDate(start);
+  const dtEnd = formatICSDate(end);
+
+  const base = "https://calendar.google.com/calendar/render";
+  const summary = `${appointment.petName} - ${appointment.type} Appointment`;
+  const details = appointment.reason || "Veterinary appointment";
+  const location = appointment.location || "Clinic";
+
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: summary,
+    details,
+    location,
+    dates: `${dtStart}/${dtEnd}`,
+  });
+
+  return `${base}?${params.toString()}`;
+}
 
 export default function AppointmentDetails() {
   const { id } = useParams();
@@ -337,6 +413,19 @@ export default function AppointmentDetails() {
             <Button variant="outline" onClick={() => appointment.patientId && navigate(`/patients/${appointment.patientId}`)}>
               <User className="mr-2 h-4 w-4" />
               View Patient Profile
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() =>
+                window.open(getGoogleCalendarUrl(appointment), "_blank", "noopener,noreferrer")
+              }
+            >
+              <Calendar className="mr-2 h-4 w-4" />
+              Add to Google Calendar
+            </Button>
+            <Button variant="outline" onClick={() => downloadAppointmentICS(appointment)}>
+              <Calendar className="mr-2 h-4 w-4" />
+              Add to Calendar (.ics)
             </Button>
             <Button variant="outline">
               <Edit className="mr-2 h-4 w-4" />
