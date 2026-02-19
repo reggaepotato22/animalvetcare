@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Layout } from "@/components/Layout";
+import { WorkflowProvider } from "@/state/workflow";
 import Index from "./pages/Index";
 import Patients from "./pages/Patients";
 import AddPatient from "./pages/AddPatient";
@@ -27,6 +28,9 @@ import Hospitalization from "./pages/Hospitalization";
 import Treatments from "./pages/Treatments";
 import Inventory from "./pages/Inventory";
 import NotFound from "./pages/NotFound";
+import ActiveVisit from "./pages/ActiveVisit";
+import Invoice from "./pages/Invoice";
+import WorkflowSettings from "./pages/WorkflowSettings";
 
 const queryClient = new QueryClient();
 
@@ -84,33 +88,38 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <AppErrorBoundary>
-            <Layout>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/patients" element={<Patients />} />
-                <Route path="/patients/add" element={<AddPatient />} />
-                <Route path="/patients/:id" element={<PatientDetails />} />
-                <Route path="/appointments" element={<Appointments />} />
-                <Route path="/appointments/:id" element={<AppointmentDetails />} />
-                <Route path="/records" element={<Records />} />
-                <Route path="/records/new" element={<NewRecord />} />
-                <Route path="/records/:id" element={<ClinicalRecordDetails />} />
-                <Route path="/staff" element={<Staff />} />
-                <Route path="/users" element={<Users />} />
-                <Route path="/labs" element={<Labs />} />
-                <Route path="/labs/results/add/:orderId" element={<AddLabResults />} />
-                <Route path="/postmortem" element={<Postmortem />} />
-                <Route path="/postmortem/new" element={<NewPostMortem />} />
-                <Route path="/postmortem/:id" element={<PostmortemDetails />} />
-                <Route path="/hospitalization" element={<Hospitalization />} />
-                <Route path="/treatments" element={<Treatments />} />
-                <Route path="/inventory" element={<Inventory />} />
-                <Route path="/reports" element={<Reports />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Layout>
-          </AppErrorBoundary>
+          <WorkflowProvider>
+            <AppErrorBoundary>
+              <Layout>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/patients" element={<Patients />} />
+                  <Route path="/patients/add" element={<AddPatient />} />
+                  <Route path="/patients/:id" element={<PatientDetails />} />
+                  <Route path="/appointments" element={<Appointments />} />
+                  <Route path="/appointments/:id" element={<AppointmentDetails />} />
+                  <Route path="/records" element={<Records />} />
+                  <Route path="/records/new" element={<NewRecord />} />
+                  <Route path="/records/:id" element={<ClinicalRecordDetails />} />
+                  <Route path="/staff" element={<Staff />} />
+                  <Route path="/users" element={<Users />} />
+                  <Route path="/labs" element={<Labs />} />
+                  <Route path="/labs/results/add/:orderId" element={<AddLabResults />} />
+                  <Route path="/postmortem" element={<Postmortem />} />
+                  <Route path="/postmortem/new" element={<NewPostMortem />} />
+                  <Route path="/postmortem/:id" element={<PostmortemDetails />} />
+                  <Route path="/hospitalization" element={<Hospitalization />} />
+                  <Route path="/treatments" element={<Treatments />} />
+                  <Route path="/inventory" element={<Inventory />} />
+                  <Route path="/invoice/:id" element={<Invoice />} />
+                  <Route path="/visits/active" element={<ActiveVisit />} />
+                  <Route path="/settings/workflow" element={<WorkflowSettings />} />
+                  <Route path="/reports" element={<Reports />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Layout>
+            </AppErrorBoundary>
+          </WorkflowProvider>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>

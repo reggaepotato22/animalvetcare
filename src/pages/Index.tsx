@@ -96,6 +96,16 @@ const Index = () => {
 
   const alerts = allAlerts.slice(0, 3);
 
+  const clinicPatientsInClinic = [
+    { id: "1", name: "Rocky", reason: "Emergency - respiratory distress" },
+    { id: "2", name: "Luna", reason: "Surgery recovery" },
+  ];
+
+  const clinicPatientsCompleted = [
+    { id: "3", name: "Max", reason: "Wellness check completed" },
+    { id: "4", name: "Whiskers", reason: "Vaccination visit completed" },
+  ];
+
   useEffect(() => {
     const storedChecklist = localStorage.getItem("vetcare_onboarding_checklist");
     if (storedChecklist) {
@@ -263,6 +273,13 @@ const Index = () => {
             <Button
               variant="outline"
               className="justify-start transition-colors duration-150"
+              onClick={() => navigate("/visits/active")}
+            >
+              Start active visit
+            </Button>
+            <Button
+              variant="outline"
+              className="justify-start transition-colors duration-150"
               onClick={() => {
                 setChecklist((prev) => ({ ...prev, labs: true }));
                 navigate("/labs");
@@ -354,6 +371,65 @@ const Index = () => {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="transition-transform transition-shadow duration-200 hover:-translate-y-0.5 hover:shadow-md">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Clinic status
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">
+                In clinic
+              </p>
+              <div className="space-y-2">
+                {clinicPatientsInClinic.map((patient) => (
+                  <div
+                    key={patient.id}
+                    className="rounded-md border border-border bg-card px-3 py-2 text-xs"
+                  >
+                    <p className="font-medium">{patient.name}</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {patient.reason}
+                    </p>
+                  </div>
+                ))}
+                {clinicPatientsInClinic.length === 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    No patients currently in clinic.
+                  </p>
+                )}
+              </div>
+            </div>
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">
+                Completed today
+              </p>
+              <div className="space-y-2">
+                {clinicPatientsCompleted.map((patient) => (
+                  <div
+                    key={patient.id}
+                    className="rounded-md border border-border bg-card px-3 py-2 text-xs"
+                  >
+                    <p className="font-medium">{patient.name}</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {patient.reason}
+                    </p>
+                  </div>
+                ))}
+                {clinicPatientsCompleted.length === 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    No visits completed yet today.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* All Alerts Modal */}
       <Dialog open={isAlertsModalOpen} onOpenChange={setIsAlertsModalOpen}>

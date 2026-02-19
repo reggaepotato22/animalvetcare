@@ -14,14 +14,16 @@ export function Layout({ children }: LayoutProps) {
       >
         Skip to main content
       </a>
-      <div className="hidden md:block md:h-screen md:overflow-y-auto md:border-r md:border-border/60 bg-background/80">
+      <div className="hidden md:block md:h-screen md:overflow-y-auto md:border-r md:border-border/60 bg-background/80 print:hidden">
         <Navigation />
       </div>
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        <Header />
+        <div className="print:hidden">
+          <Header />
+        </div>
         <main
           id="main-content"
-          className="flex-1 w-full px-4 py-4 md:px-6 lg:px-8 overflow-y-auto"
+          className="flex-1 w-full px-4 py-4 md:px-6 lg:px-8 overflow-y-auto print:px-0 print:py-0"
           tabIndex={-1}
         >
           <div className="mx-auto max-w-6xl space-y-6">
